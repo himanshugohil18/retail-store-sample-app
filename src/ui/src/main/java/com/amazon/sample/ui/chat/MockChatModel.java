@@ -31,7 +31,7 @@ public class MockChatModel implements ChatModel {
   @Override
   public ChatResponse call(Prompt prompt) {
     return new ChatResponse(
-      List.of(new Generation(new AssistantMessage("This is a mock response")))
+      List.of(new Generation(new AssistantMessage("This is a CI/CD pipeline test response")))
     );
   }
 
