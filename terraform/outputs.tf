@@ -111,11 +111,11 @@ output "retail_store_url" {
 output "useful_commands" {
   description = "Useful commands for managing the cluster"
   value = {
-    get_nodes           = "kubectl get nodes"
-    get_pods_all        = "kubectl get pods -A"
-    get_retail_store    = "kubectl get pods -n retail-store"
-    argocd_apps         = "kubectl get applications -n ${var.argocd_namespace}"
-    ingress_status      = "kubectl get ingress -A"
-    describe_cluster    = "kubectl cluster-info"
+    get_nodes        = "kubectl get nodes"
+    get_pods_all     = "kubectl get pods -A"
+    get_retail_store = "kubectl get pods -n retail-store"
+    argocd_apps      = "kubectl get applications -n ${var.argocd_namespace}"
+    ingress_status   = "kubectl get ingress -A"
+    describe_cluster = "kubectl cluster-info"
   }
 }

@@ -22,22 +22,24 @@ module "eks_addons" {
   }
 
   # =============================================================================
-  # NGINX INGRESS CONTROLLER - Load Balancing and Routing
+  # NGINX INGRESS CONTROLLER - L7 proxy (ClusterIP only, ALB fronts it)
+  # NLB creation is not supported in this AWS account. The ingress-nginx
+  # controller now runs as ClusterIP. An ALB (provisioned by AWS Load Balancer
+  # Controller) acts as the external-facing load balancer and forwards traffic
+  # to the nginx controller via NodePort.
   # =============================================================================
   enable_ingress_nginx = true
   ingress_nginx = {
     most_recent = true
     namespace   = "ingress-nginx"
-    
-    # Basic configuration
+
     set = [
+      # Switch from LoadBalancer to ClusterIP — the ALB Ingress resource below
+      # will front nginx instead. This removes the NLB annotation that was
+      # causing the OperationNotPermitted error.
       {
         name  = "controller.service.type"
-        value = "LoadBalancer"
-      },
-      {
-        name  = "controller.service.externalTrafficPolicy"
-        value = "Local"
+        value = "ClusterIP"
       },
       {
         name  = "controller.resources.requests.cpu"
@@ -56,32 +58,28 @@ module "eks_addons" {
         value = "256Mi"
       }
     ]
-    
-    # AWS Load Balancer specific annotations
-    set_sensitive = [
+  }
+
+  # =============================================================================
+  # AWS LOAD BALANCER CONTROLLER
+  # Provisions an internet-facing ALB via a Kubernetes Ingress resource.
+  # Uses IRSA (OIDC) for IAM authentication — the cluster's OIDC provider is
+  # already configured by the retail_app_eks module.
+  # =============================================================================
+  enable_aws_load_balancer_controller = true
+  aws_load_balancer_controller = {
+    most_recent = true
+    namespace   = "kube-system"
+    set = [
       {
-        name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-scheme"
-        value = "internet-facing"
+        name  = "replicaCount"
+        value = "1"
       },
+      # EKS Auto Mode nodes use IMDSv2 hop limit = 1, which means the LBC pod
+      # cannot introspect VPC ID from EC2 metadata. Pass it explicitly instead.
       {
-        name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-type"
-        value = "nlb"
-      },
-      {
-        name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-nlb-target-type"
-        value = "instance"
-      },
-      {
-        name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-health-check-path"
-        value = "/healthz"
-      },
-      {
-        name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-health-check-port"
-        value = "10254"
-      },
-      {
-        name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-health-check-protocol"
-        value = "HTTP"
+        name  = "vpcId"
+        value = module.vpc.vpc_id
       }
     ]
   }
@@ -90,20 +88,11 @@ module "eks_addons" {
   # OPTIONAL: MONITORING STACK
   # =============================================================================
   # Uncomment below to enable monitoring (increases costs)
-  
+
   # enable_kube_prometheus_stack = var.enable_monitoring
   # kube_prometheus_stack = {
   #   most_recent = true
   #   namespace   = "monitoring"
-  # }
-
-  # =============================================================================
-  # OPTIONAL: AWS LOAD BALANCER CONTROLLER
-  # =============================================================================
-  # enable_aws_load_balancer_controller = true
-  # aws_load_balancer_controller = {
-  #   most_recent = true
-  #   namespace   = "kube-system"
   # }
 
   depends_on = [module.retail_app_eks]

@@ -1,0 +1,374 @@
+# =============================================================================
+# CI/CD Pipeline — Retail Store Sample App
+# =============================================================================
+#
+# Flow:
+#   push to main
+#     └─ detect-changes        (which src/<service> dirs changed?)
+#          └─ build-and-push   (matrix: only the changed services)
+#               ├─ docker build + tag with git SHA
+#               ├─ docker push to private ECR
+#               └─ update src/<service>/chart/values.yaml
+#                    └─ git commit + push to main  [skip ci]
+#                         └─ ArgoCD auto-syncs → EKS rolling update
+#
+# Authentication:
+#   GitHub Actions uses OIDC to assume an AWS IAM role.
+#   No AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY are stored anywhere.
+#   The IAM role and OIDC provider are provisioned by terraform/oidc.tf.
+#
+#   The Helm values.yaml commit-back uses the built-in GITHUB_TOKEN.
+#   No long-lived PAT is required or stored.
+#
+# Required GitHub secrets/variables (Settings → Secrets and variables → Actions):
+#   Secrets:
+#     AWS_ACCOUNT_ID     — 12-digit AWS account number
+#     AWS_ROLE_TO_ASSUME — IAM role ARN from `terraform output github_actions_role_arn`
+#   Variables:
+#     AWS_REGION         — e.g. us-west-2
+# =============================================================================
+
+name: CI/CD — Build, Push & Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      # Only trigger when application source code changes.
+      # Changes to docs, terraform, argocd manifests, or this workflow itself
+      # do NOT trigger a rebuild — only actual service source changes do.
+      - "src/ui/**"
+      - "src/catalog/**"
+      - "src/cart/**"
+      - "src/orders/**"
+      - "src/checkout/**"
+
+  # Allow manual trigger from the GitHub Actions UI for emergency redeployments
+  workflow_dispatch:
+    inputs:
+      services:
+        description: "Comma-separated services to force-rebuild (e.g. ui,catalog). Leave empty to auto-detect."
+        required: false
+        default: ""
+
+# Global permissions — only what this workflow actually needs.
+# id-token: write  → allows GitHub to mint an OIDC token for AWS authentication
+# contents: write  → allows the built-in GITHUB_TOKEN to push the Helm values.yaml
+#                    commit back to the repository (no PAT required)
+permissions:
+  id-token: write
+  contents: write
+
+# Prevent concurrent runs on the same branch from racing on the values.yaml commit.
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: false   # don't cancel — let the current run finish cleanly
+
+env:
+  # The ECR registry hostname. Constructed from the account ID secret and region variable.
+  # Example: 730649731674.dkr.ecr.us-west-2.amazonaws.com
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com
+
+# =============================================================================
+# JOB 1 — DETECT CHANGES
+#
+# Uses dorny/paths-filter to determine which service directories have changed
+# in this push. Each output is "true" or "false". The build-and-push job reads
+# these outputs to decide which services to include in its matrix.
+# =============================================================================
+
+jobs:
+  detect-changes:
+    name: Detect changed services
+    runs-on: ubuntu-latest
+    # Map each service to a boolean output so the matrix job can read it
+    outputs:
+      ui:       ${{ steps.filter.outputs.ui }}
+      catalog:  ${{ steps.filter.outputs.catalog }}
+      cart:     ${{ steps.filter.outputs.cart }}
+      orders:   ${{ steps.filter.outputs.orders }}
+      checkout: ${{ steps.filter.outputs.checkout }}
+      # Serialised list used to populate the matrix (e.g. ["ui","catalog"])
+      services: ${{ steps.build-matrix.outputs.services }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # -----------------------------------------------------------------------
+      # Path filter — inspect the git diff for this push and set one output
+      # per service to "true" if any file under src/<service>/ changed.
+      # -----------------------------------------------------------------------
+      - name: Detect which services changed
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            ui:
+              - 'src/ui/**'
+            catalog:
+              - 'src/catalog/**'
+            cart:
+              - 'src/cart/**'
+            orders:
+              - 'src/orders/**'
+            checkout:
+              - 'src/checkout/**'
+
+      # -----------------------------------------------------------------------
+      # Build the matrix list. If the workflow was triggered manually with
+      # specific services listed, use those instead of the path-filter result.
+      # Output is a JSON array, e.g. '["ui","catalog"]'.
+      # An empty array means nothing changed — the next job will be skipped.
+      # -----------------------------------------------------------------------
+      - name: Build service matrix
+        id: build-matrix
+        shell: bash
+        run: |
+          MANUAL="${{ github.event.inputs.services }}"
+
+          if [[ -n "$MANUAL" ]]; then
+            # Manual trigger: split comma-separated input into a JSON array
+            SERVICES=$(python3 -c "
+          import json, os
+          raw = os.environ.get('MANUAL_INPUT', '')
+          items = [s.strip() for s in raw.split(',') if s.strip()]
+          print(json.dumps(items))
+          " MANUAL_INPUT="$MANUAL")
+          else
+            # Automatic: collect services whose path-filter output is "true"
+            SERVICES="[]"
+            for svc in ui catalog cart orders checkout; do
+              val=$(echo '${{ toJSON(steps.filter.outputs) }}' | \
+                    python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('$svc','false'))")
+              if [[ "$val" == "true" ]]; then
+                SERVICES=$(echo "$SERVICES" | python3 -c \
+                  "import sys,json; l=json.load(sys.stdin); l.append('$svc'); print(json.dumps(l))")
+              fi
+            done
+          fi
+
+          echo "services=$SERVICES" >> "$GITHUB_OUTPUT"
+          echo "Services to build: $SERVICES"
+
+# =============================================================================
+# JOB 2 — BUILD, PUSH & UPDATE HELM VALUES
+#
+# Runs once per service in the matrix. Each instance:
+#   1. Authenticates to AWS via OIDC (no static credentials)
+#   2. Logs in to Amazon ECR
+#   3. Builds the Docker image from src/<service>/Dockerfile
+#   4. Tags it with the full git commit SHA (sha-<sha>)
+#   5. Pushes to <account>.dkr.ecr.<region>.amazonaws.com/retail-store-<service>
+#   6. Updates src/<service>/chart/values.yaml:
+#        image.repository → private ECR URL
+#        image.tag        → sha-<sha>
+#   7. Commits and pushes that change back to main using GITHUB_TOKEN
+#      The commit contains [skip ci] to prevent an infinite workflow loop.
+# =============================================================================
+
+  build-and-push:
+    name: Build & push — ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    # Only run if there is at least one service in the matrix list
+    if: ${{ needs.detect-changes.outputs.services != '[]' && needs.detect-changes.outputs.services != '' }}
+
+    strategy:
+      # Build all changed services in parallel
+      fail-fast: false
+      matrix:
+        service: ${{ fromJSON(needs.detect-changes.outputs.services) }}
+
+    steps:
+      # -----------------------------------------------------------------------
+      # 1. Checkout using the built-in GITHUB_TOKEN.
+      #    contents: write permission (set globally above) allows this token
+      #    to push commits back to the repository — no PAT needed.
+      #    The [skip ci] trailer on the values.yaml commit prevents this push
+      #    from re-triggering the workflow.
+      # -----------------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Use GITHUB_TOKEN (default) — contents:write permission is set above.
+          # fetch-depth 0 is needed so git log / pull --rebase work correctly.
+          fetch-depth: 0
+
+      # -----------------------------------------------------------------------
+      # 2. Authenticate to AWS using GitHub OIDC — zero static credentials.
+      #    The role ARN is stored as a GitHub secret. It was created by
+      #    terraform/oidc.tf and output as `github_actions_role_arn`.
+      # -----------------------------------------------------------------------
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ vars.AWS_REGION }}
+          # Short session is fine — the build + push should complete in < 30 min
+          role-session-name: github-actions-${{ matrix.service }}-${{ github.run_id }}
+
+      # -----------------------------------------------------------------------
+      # 3. Log in to Amazon ECR.
+      #    This action runs `aws ecr get-login-password` and pipes it to
+      #    `docker login`. The token is valid for 12 hours.
+      # -----------------------------------------------------------------------
+      - name: Log in to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # -----------------------------------------------------------------------
+      # 4. Compute the image tag.
+      #    We use the full 40-char SHA for uniqueness, prefixed with "sha-" so
+      #    the ECR lifecycle policy can distinguish CI-built tags from manual
+      #    ones. Example: sha-abc1234def5678...
+      # -----------------------------------------------------------------------
+      - name: Compute image tag
+        id: tag
+        shell: bash
+        run: |
+          IMAGE_TAG="sha-${{ github.sha }}"
+          ECR_REPO="${{ env.ECR_REGISTRY }}/retail-store-${{ matrix.service }}"
+          echo "image_tag=${IMAGE_TAG}"              >> "$GITHUB_OUTPUT"
+          echo "ecr_repo=${ECR_REPO}"                >> "$GITHUB_OUTPUT"
+          echo "full_image=${ECR_REPO}:${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+          echo "Building: ${ECR_REPO}:${IMAGE_TAG}"
+
+      # -----------------------------------------------------------------------
+      # 5. Set up Docker Buildx for efficient multi-platform builds.
+      #    We use the docker-container driver which enables layer caching.
+      # -----------------------------------------------------------------------
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # -----------------------------------------------------------------------
+      # 6. Build and push the Docker image.
+      #    - context: src/<service>/          (contains the Dockerfile)
+      #    - tags: <ecr-repo>:sha-<sha> and <ecr-repo>:latest
+      #      (:latest is mutable, useful for layer cache on the next build)
+      #    - cache-from/to: inline cache stored inside the image layers,
+      #      pulled from the :latest tag on the next run to speed up builds
+      # -----------------------------------------------------------------------
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: src/${{ matrix.service }}
+          file: src/${{ matrix.service }}/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.tag.outputs.full_image }}
+            ${{ steps.tag.outputs.ecr_repo }}:latest
+          # Inline build cache — bakes cache metadata into the image itself.
+          # On the next push, Docker pulls :latest and reuses unchanged layers.
+          cache-from: type=registry,ref=${{ steps.tag.outputs.ecr_repo }}:latest
+          cache-to: type=inline
+          # Label the image with git provenance for traceability
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ github.event.head_commit.timestamp }}
+            com.retail-store.service=${{ matrix.service }}
+
+      # -----------------------------------------------------------------------
+      # 7. Update the Helm chart values.yaml for this service.
+      #
+      #    We use sed with a precise regex to replace only the two image fields:
+      #      image.repository: <old-value>  →  image.repository: <ecr-url>
+      #      image.tag: "<old-tag>"         →  image.tag: "sha-<sha>"
+      #
+      #    The values.yaml structure is:
+      #      image:
+      #        repository: public.ecr.aws/aws-containers/retail-store-sample-<svc>
+      #        pullPolicy: Always
+      #        tag: "1.2.2"
+      #
+      #    We replace repository and tag in-place. pullPolicy is left unchanged.
+      # -----------------------------------------------------------------------
+      - name: Update Helm chart image values
+        shell: bash
+        run: |
+          VALUES_FILE="src/${{ matrix.service }}/chart/values.yaml"
+          ECR_REPO="${{ steps.tag.outputs.ecr_repo }}"
+          IMAGE_TAG="${{ steps.tag.outputs.image_tag }}"
+
+          echo "Updating ${VALUES_FILE}"
+          echo "  repository: ${ECR_REPO}"
+          echo "  tag:        ${IMAGE_TAG}"
+
+          # Replace the repository line (any value after "repository: ")
+          # Uses | as sed delimiter to avoid issues with / in ECR URLs
+          sed -i "s|^  repository:.*|  repository: ${ECR_REPO}|" "${VALUES_FILE}"
+
+          # Replace the tag line (handles both quoted and unquoted values)
+          sed -i 's|^  tag:.*|  tag: "'"${IMAGE_TAG}"'"|' "${VALUES_FILE}"
+
+          echo "--- Updated values (image block) ---"
+          grep -A3 "^image:" "${VALUES_FILE}"
+
+      # -----------------------------------------------------------------------
+      # 8. Commit and push the values.yaml change back to main.
+      #
+      #    Uses the built-in GITHUB_TOKEN (contents:write permission is set
+      #    globally at the top of this workflow). No PAT is required.
+      #
+      #    Loop prevention: the commit message ends with "[skip ci]" which
+      #    GitHub Actions recognises and does NOT re-trigger the workflow.
+      #    This is the standard GitHub Actions mechanism for bot commits.
+      #
+      #    We pull --rebase before pushing to handle the case where multiple
+      #    services are being updated in parallel and one already pushed.
+      # -----------------------------------------------------------------------
+      - name: Commit and push Helm values update
+        shell: bash
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          VALUES_FILE="src/${{ matrix.service }}/chart/values.yaml"
+
+          # Stage only the values.yaml for this specific service
+          git add "${VALUES_FILE}"
+
+          # Check if there is actually something to commit (idempotent)
+          if git diff --cached --quiet; then
+            echo "No changes to commit for ${{ matrix.service }} — image tag already up to date."
+            exit 0
+          fi
+
+          git commit -m "ci: update ${{ matrix.service }} image to sha-${{ github.sha }}
+
+          Service:    ${{ matrix.service }}
+          Image:      ${{ steps.tag.outputs.full_image }}
+          Triggered:  ${{ github.event_name }} on ${{ github.ref }}
+          Run:        ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          [skip ci]"
+
+          # Pull with rebase to pick up any concurrent values.yaml commits
+          # from other services being built in the same matrix run
+          git pull --rebase origin main
+
+          git push origin main
+
+      # -----------------------------------------------------------------------
+      # 9. Print a deployment summary to the GitHub Actions job summary page.
+      # -----------------------------------------------------------------------
+      - name: Write job summary
+        if: always()
+        shell: bash
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" << EOF
+          ## ${{ matrix.service }} — Build & Deploy Summary
+
+          | Field        | Value |
+          |---|---|
+          | Service      | \`${{ matrix.service }}\` |
+          | Image        | \`${{ steps.tag.outputs.full_image }}\` |
+          | Git SHA      | \`${{ github.sha }}\` |
+          | Branch       | \`${{ github.ref_name }}\` |
+          | Triggered by | \`${{ github.actor }}\` via \`${{ github.event_name }}\` |
+          | Helm file    | \`src/${{ matrix.service }}/chart/values.yaml\` |
+
+          ArgoCD will detect the values.yaml commit and roll out the new image automatically.
+          EOF

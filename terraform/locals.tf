@@ -20,28 +20,29 @@ resource "random_string" "suffix" {
 locals {
   # Cluster configuration with unique suffix to avoid conflicts
   cluster_name = "${var.cluster_name}-${random_string.suffix.result}"
-  
+
   # Network configuration
   azs             = slice(data.aws_availability_zones.available.names, 0, 3)
   private_subnets = [for k, v in local.azs : cidrsubnet(var.vpc_cidr, 8, k + 10)]
   public_subnets  = [for k, v in local.azs : cidrsubnet(var.vpc_cidr, 8, k)]
-  
+
   # Common tags applied to all resources
+  # NOTE: CreatedDate removed — timestamp() re-evaluates on every plan and
+  # causes all tagged resources to appear as changed even when nothing changed.
   common_tags = {
-    Environment   = var.environment
-    Project       = "retail-store"
-    ManagedBy     = "terraform"
-    CreatedBy     = "TrainWithShubhamCommunity"
-    Owner         = data.aws_caller_identity.current.user_id
-    CreatedDate   = formatdate("YYYY-MM-DD", timestamp())
+    Environment = var.environment
+    Project     = "retail-store"
+    ManagedBy   = "terraform"
+    CreatedBy   = "himanshugohil"
+    Owner       = data.aws_caller_identity.current.user_id
   }
-  
+
   # Kubernetes subnet tags
   public_subnet_tags = {
     "kubernetes.io/cluster/${local.cluster_name}" = "shared"
     "kubernetes.io/role/elb"                      = "1"
   }
-  
+
   private_subnet_tags = {
     "kubernetes.io/cluster/${local.cluster_name}" = "shared"
     "kubernetes.io/role/internal-elb"             = "1"

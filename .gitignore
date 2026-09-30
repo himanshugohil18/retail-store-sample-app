@@ -3,6 +3,10 @@
 .terraform
 *.tfstate*
 *.lock.hcl
+# Terraform plan files — never commit these (may contain sensitive data)
+*.tfplan
+tfplan
+tfplan-*
 *.log
 .vscode
 reports
