@@ -4,9 +4,9 @@
 
 replicaCount: 1
 image:
-  repository: public.ecr.aws/aws-containers/retail-store-sample-ui
+{0649731674.dkr.ecr.us-west-2.amazonaws.com/retail-store-ui
   pullPolicy: Always
-  tag: "1.2.2"
+  tag: sha-b16c58c62806bc9de749fa1b30393babc0d9ed22
 imagePullSecrets:
   - name: regcred
 nameOverride: ""
