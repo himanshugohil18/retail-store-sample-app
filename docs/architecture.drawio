@@ -1,0 +1,448 @@
+<mxfile host="app.diagrams.net" modified="2026-10-01T07:00:00.000Z" agent="draw.io" version="21.6.5" type="device">
+  <diagram name="Retail Store DevOps Architecture" id="retail-store-arch">
+    <mxGraphModel dx="1422" dy="762" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ================================================================ -->
+        <!-- BACKGROUND BANDS                                                  -->
+        <!-- ================================================================ -->
+
+        <!-- Band: CI/CD -->
+        <mxCell id="band_cicd" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;opacity=30;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="10" y="10" width="480" height="1100" as="geometry" />
+        </mxCell>
+        <mxCell id="band_cicd_label" value="CI / CD" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="10" y="12" width="480" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- Band: EKS / GitOps -->
+        <mxCell id="band_eks" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;opacity=30;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="510" y="10" width="580" height="1100" as="geometry" />
+        </mxCell>
+        <mxCell id="band_eks_label" value="Amazon EKS — Kubernetes" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontColor=#82b366;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="510" y="12" width="580" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- Band: Observability -->
+        <mxCell id="band_obs" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;opacity=30;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="1110" y="10" width="530" height="1100" as="geometry" />
+        </mxCell>
+        <mxCell id="band_obs_label" value="Observability" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontColor=#d6b656;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1110" y="12" width="530" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- ================================================================ -->
+        <!-- COLUMN 1: CI/CD                                                   -->
+        <!-- ================================================================ -->
+
+        <!-- Developer -->
+        <mxCell id="developer" value="&lt;b&gt;Developer&lt;/b&gt;" style="shape=mxgraph.cisco.people.man;html=1;pointerEvents=1;dashed=0;fillColor=#0050ef;strokeColor=#001DBC;shadow=0;fontSize=14;align=center;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="200" y="55" width="60" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="dev_label" value="Developer" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="175" y="125" width="110" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow: Developer → GitHub -->
+        <mxCell id="arr_dev_gh" value="git push" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#555555;strokeWidth=2;fontSize=10;fontColor=#555555;endArrow=block;endFill=1;" edge="1" parent="1" source="developer" target="github">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- GitHub -->
+        <mxCell id="github" value="" style="shape=mxgraph.logos.github;html=1;pointerEvents=1;fillColor=#24292e;strokeColor=none;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="205" y="195" width="50" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="github_label" value="GitHub Repository" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="155" y="247" width="150" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="github_sub" value="main branch = desired state" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=9;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="155" y="265" width="150" height="16" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow: GitHub → GitHub Actions -->
+        <mxCell id="arr_gh_gha" value="push trigger" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#555555;strokeWidth=2;fontSize=10;fontColor=#555555;endArrow=block;endFill=1;" edge="1" parent="1" source="github" target="gha_box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- GitHub Actions Box -->
+        <mxCell id="gha_box" value="GitHub Actions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2088FF;strokeColor=#1366CC;fontColor=#ffffff;fontSize=13;fontStyle=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="100" y="330" width="260" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="gha_sub" value="ci-cd.yml · AWS Access Keys auth" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=9;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="100" y="378" width="260" height="16" as="geometry" />
+        </mxCell>
+
+        <!-- GHA Steps -->
+        <mxCell id="gha_step1" value="① dorny/paths-filter — detect changed service" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#c0c0c0;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="60" y="415" width="340" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="gha_step2" value="② Parallel matrix build (fail-fast: false)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#c0c0c0;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="60" y="453" width="340" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="gha_step3" value="③ docker build   (multi-stage, amazonlinux:2023)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#c0c0c0;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="60" y="491" width="340" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="gha_step4" value="④ Tag: sha-&lt;GITHUB_SHA&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#c0c0c0;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="60" y="529" width="340" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="gha_step5" value="⑤ docker push → Amazon ECR (IMMUTABLE tags)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#c0c0c0;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="60" y="567" width="340" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="gha_step6" value="⑥ Update Helm values.yaml (python3 regex)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#c0c0c0;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="60" y="605" width="340" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="gha_step7" value="⑦ git commit [skip ci] → push to main" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="60" y="643" width="340" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow: GHA steps → ECR -->
+        <mxCell id="arr_gha_ecr" value="docker push" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#FF6600;strokeWidth=2.5;fontSize=10;fontColor=#FF6600;fontStyle=1;endArrow=block;endFill=1;" edge="1" parent="1" source="gha_step5" target="ecr_box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow: GHA commit → GitHub (loop back) -->
+        <mxCell id="arr_commit_gh" value="[skip ci]" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#999999;strokeWidth=1.5;fontSize=9;fontColor=#999999;dashed=1;endArrow=block;endFill=1;exitDx=-20;" edge="1" parent="1" source="gha_step7" target="github">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="30" y="658" />
+              <mxPoint x="30" y="220" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ECR Box -->
+        <mxCell id="ecr_box" value="Amazon ECR" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF6600;strokeColor=#CC4400;fontColor=#ffffff;fontSize=13;fontStyle=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="100" y="730" width="260" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="ecr_sub" value="5 private repos · IMMUTABLE SHA tags · scan_on_push" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=9;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="60" y="778" width="340" height="16" as="geometry" />
+        </mxCell>
+
+        <!-- ECR Repo chips -->
+        <mxCell id="ecr_r1" value="retail-store-ui" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#FF6600;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="60" y="803" width="120" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="ecr_r2" value="retail-store-catalog" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#FF6600;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="190" y="803" width="120" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="ecr_r3" value="retail-store-cart" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#FF6600;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="320" y="803" width="120" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="ecr_r4" value="retail-store-orders" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#FF6600;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="60" y="833" width="120" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="ecr_r5" value="retail-store-checkout" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#FF6600;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="190" y="833" width="120" height="24" as="geometry" />
+        </mxCell>
+
+        <!-- ================================================================ -->
+        <!-- COLUMN 2: EKS / GitOps                                           -->
+        <!-- ================================================================ -->
+
+        <!-- ALB -->
+        <mxCell id="alb" value="Internet-facing ALB" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#8B4513;strokeColor=#5C2D00;fontColor=#ffffff;fontSize=11;fontStyle=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="540" y="55" width="200" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="alb_sub" value="port 80 · AWS Load Balancer Controller · IRSA" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=9;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="520" y="97" width="240" height="16" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow: ALB → ingress-nginx -->
+        <mxCell id="arr_alb_nginx" value="target-type=ip" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#555555;strokeWidth=2;fontSize=10;fontColor=#555555;endArrow=block;endFill=1;" edge="1" parent="1" source="alb" target="nginx">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ingress-nginx -->
+        <mxCell id="nginx" value="ingress-nginx" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#009639;strokeColor=#006622;fontColor=#ffffff;fontSize=11;fontStyle=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="565" y="160" width="150" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="nginx_sub" value="ClusterIP · namespace: ingress-nginx" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=9;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="520" y="202" width="240" height="16" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow: ingress-nginx → UI -->
+        <mxCell id="arr_nginx_ui" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#555555;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" parent="1" source="nginx" target="app_ui">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ArgoCD box -->
+        <mxCell id="argocd_box" value="Argo CD" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EF4C3A;strokeColor=#B82A1E;fontColor=#ffffff;fontSize=13;fontStyle=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="820" y="55" width="200" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="argocd_sub" value="argo-cd v5.51.6 · namespace: argocd" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=9;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="800" y="103" width="240" height="16" as="geometry" />
+        </mxCell>
+
+        <!-- ArgoCD Apps -->
+        <mxCell id="argo_app1" value="retail-store-ui ✓ Synced" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="800" y="128" width="160" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="argo_app2" value="retail-store-catalog ✓ Synced" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="800" y="154" width="160" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="argo_app3" value="retail-store-cart ✓ Synced" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="800" y="180" width="160" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="argo_app4" value="retail-store-orders ✓ Synced" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="800" y="206" width="160" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="argo_app5" value="retail-store-checkout ✓ Synced" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="800" y="232" width="160" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="argo_proj" value="AppProject: retail-store · prune+selfHeal" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=9;fontColor=#888888;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="790" y="257" width="180" height="16" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow: GitHub → ArgoCD (watches main) -->
+        <mxCell id="arr_gh_argo" value="watches main" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#EF4C3A;strokeWidth=2;fontSize=10;fontColor=#EF4C3A;fontStyle=1;dashed=1;endArrow=block;endFill=1;" edge="1" parent="1" source="github" target="argocd_box">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="490" y="220" />
+              <mxPoint x="490" y="78" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Arrow: ECR → ArgoCD pulls (implicit — arrow from ECR to apps via ArgoCD) -->
+        <mxCell id="arr_ecr_argo" value="pulls images" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=1;entryDx=0;entryDy=0;strokeColor=#FF6600;strokeWidth=1.5;fontSize=9;fontColor=#FF6600;dashed=1;endArrow=block;endFill=1;" edge="1" parent="1" source="ecr_box" target="app_ui">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="490" y="753" />
+              <mxPoint x="490" y="520" />
+              <mxPoint x="640" y="520" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Arrow: ArgoCD → deploys to apps -->
+        <mxCell id="arr_argo_apps" value="Helm apply · rolling update" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#EF4C3A;strokeWidth=2;fontSize=10;fontColor=#EF4C3A;fontStyle=1;endArrow=block;endFill=1;" edge="1" parent="1" source="argocd_box" target="app_box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Application Group Box -->
+        <mxCell id="app_box" value="namespace: retail-store" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f9f9f9;strokeColor=#82b366;fontSize=10;fontStyle=1;arcSize=6;verticalAlign=top;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="530" y="330" width="520" height="240" as="geometry" />
+        </mxCell>
+
+        <!-- App: UI -->
+        <mxCell id="app_ui" value="&lt;b&gt;retail-store-ui&lt;/b&gt;&lt;br&gt;Java / Spring Boot" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="545" y="360" width="145" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="app_catalog" value="&lt;b&gt;retail-store-catalog&lt;/b&gt;&lt;br&gt;Go / Gin" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="710" y="360" width="145" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="app_cart" value="&lt;b&gt;retail-store-cart&lt;/b&gt;&lt;br&gt;Java / Spring Boot" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="875" y="360" width="145" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="app_orders" value="&lt;b&gt;retail-store-orders&lt;/b&gt;&lt;br&gt;Java / Spring Boot" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="625" y="440" width="145" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="app_checkout" value="&lt;b&gt;retail-store-checkout&lt;/b&gt;&lt;br&gt;Node.js / NestJS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="795" y="440" width="145" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Helm chart note -->
+        <mxCell id="helm_note" value="Each service: Deployment · ClusterIP · ServiceAccount · ConfigMap · HPA (disabled) · Readiness probe" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=9;fontColor=#888888;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="530" y="500" width="520" height="16" as="geometry" />
+        </mxCell>
+
+        <!-- VPC / Terraform box -->
+        <mxCell id="vpc_box" value="AWS VPC — 10.0.0.0/16" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;fontStyle=1;arcSize=6;verticalAlign=top;spacingTop=4;" vertex="1" parent="1">
+          <mxGeometry x="530" y="600" width="520" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="vpc_pub" value="Public Subnets ×3&lt;br&gt;us-west-2a/b/c" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="545" y="635" width="155" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="vpc_pri" value="Private Subnets ×3&lt;br&gt;us-west-2a/b/c · EKS nodes" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="720" y="635" width="175" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="vpc_nat" value="NAT Gateway" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="910" y="635" width="115" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="vpc_tf" value="✦ Terraform-managed: VPC · EKS Auto Mode · KMS · OIDC provider · IAM roles · ECR · Security Groups" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=9;fontColor=#555555;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="530" y="686" width="520" height="16" as="geometry" />
+        </mxCell>
+
+        <!-- Terraform badge -->
+        <mxCell id="tf_badge" value="Terraform" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#7B42BC;strokeColor=#5C2D91;fontColor=#ffffff;fontSize=10;fontStyle=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="530" y="750" width="100" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tf_badge2" value="EKS Auto Mode · v1.33" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9900;strokeColor=#CC6600;fontColor=#ffffff;fontSize=10;fontStyle=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="645" y="750" width="160" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tf_badge3" value="cluster: retail-store-svqs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="820" y="750" width="170" height="26" as="geometry" />
+        </mxCell>
+
+        <!-- ================================================================ -->
+        <!-- COLUMN 3: OBSERVABILITY                                          -->
+        <!-- ================================================================ -->
+
+        <!-- Observability note banner -->
+        <mxCell id="obs_note" value="⚠  Deployed directly to the running EKS cluster  —  not Terraform-managed" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="40" width="510" height="26" as="geometry" />
+        </mxCell>
+
+        <!-- METRICS section header -->
+        <mxCell id="metrics_header" value="METRICS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E65100;strokeColor=#BF360C;fontColor=#ffffff;fontSize=12;fontStyle=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1195" y="80" width="360" height="36" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow: Apps → Prometheus -->
+        <mxCell id="arr_app_prom" value="prometheus.io/scrape: true" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#E65100;strokeWidth=2;fontSize=9;fontColor=#E65100;endArrow=block;endFill=1;" edge="1" parent="1" source="app_box" target="prom_box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Prometheus -->
+        <mxCell id="prom_box" value="Prometheus" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E65100;strokeColor=#BF360C;fontColor=#ffffff;fontSize=13;fontStyle=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1195" y="130" width="360" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="prom_sub" value="kube-prometheus-stack · 1 replica · 2d retention" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=9;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1175" y="178" width="400" height="16" as="geometry" />
+        </mxCell>
+
+        <!-- Prometheus sources -->
+        <mxCell id="prom_src1" value="Application metrics  /actuator/prometheus  /metrics" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fbe5d6;strokeColor=#E65100;fontSize=9;align=left;spacingLeft=6;" vertex="1" parent="1">
+          <mxGeometry x="1195" y="200" width="360" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="prom_src2" value="kube-state-metrics  (cluster-level K8s object metrics)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fbe5d6;strokeColor=#E65100;fontSize=9;align=left;spacingLeft=6;" vertex="1" parent="1">
+          <mxGeometry x="1195" y="228" width="360" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="prom_src3" value="node-exporter DaemonSet  (CPU · memory · disk · network)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fbe5d6;strokeColor=#E65100;fontSize=9;align=left;spacingLeft=6;" vertex="1" parent="1">
+          <mxGeometry x="1195" y="256" width="360" height="24" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow: Prometheus → Grafana -->
+        <mxCell id="arr_prom_graf" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#555555;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="prom_src3" target="grafana_box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Grafana -->
+        <mxCell id="grafana_box" value="Grafana" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F46800;strokeColor=#C24800;fontColor=#ffffff;fontSize=13;fontStyle=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1195" y="306" width="360" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="grafana_sub" value="1 replica · Prometheus data source · dashboards configured" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=9;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1175" y="354" width="400" height="16" as="geometry" />
+        </mxCell>
+
+        <!-- LOGS section header -->
+        <mxCell id="logs_header" value="LOGS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#006064;strokeColor=#00363A;fontColor=#ffffff;fontSize=12;fontStyle=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1195" y="400" width="360" height="36" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow: Apps → Filebeat -->
+        <mxCell id="arr_app_fb" value="container logs /var/log/containers/" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#006064;strokeWidth=2;fontSize=9;fontColor=#006064;endArrow=block;endFill=1;" edge="1" parent="1" source="app_box" target="filebeat_box">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1100" y="570" />
+              <mxPoint x="1100" y="460" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Filebeat -->
+        <mxCell id="filebeat_box" value="Filebeat 9.1.4" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#006064;strokeColor=#00363A;fontColor=#ffffff;fontSize=13;fontStyle=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1195" y="450" width="360" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="filebeat_sub" value="DaemonSet · all active nodes · Kubernetes metadata enrichment" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=9;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1175" y="498" width="400" height="16" as="geometry" />
+        </mxCell>
+
+        <!-- Filebeat metadata chips -->
+        <mxCell id="fb_m1" value="kubernetes.namespace" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e0f2f1;strokeColor=#006064;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1195" y="520" width="155" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="fb_m2" value="kubernetes.pod.name" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e0f2f1;strokeColor=#006064;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1360" y="520" width="155" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="fb_m3" value="kubernetes.container.name" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e0f2f1;strokeColor=#006064;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1195" y="548" width="155" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="fb_m4" value="kubernetes.node.name" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e0f2f1;strokeColor=#006064;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1360" y="548" width="155" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow: Filebeat → Elasticsearch -->
+        <mxCell id="arr_fb_es" value="ships logs" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#555555;strokeWidth=2;fontSize=10;endArrow=block;endFill=1;" edge="1" parent="1" source="fb_m3" target="es_box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Elasticsearch -->
+        <mxCell id="es_box" value="Elasticsearch 9.1.4" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#005571;strokeColor=#003349;fontColor=#ffffff;fontSize=13;fontStyle=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1195" y="600" width="360" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="es_sub" value="ECK Operator · single-node · EBS gp3 (ebs-auto) · health: GREEN" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=9;fontColor=#009900;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1175" y="648" width="400" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="es_ds" value="data stream: filebeat-9.1.4 · backing: .ds-filebeat-9.1.4-..." style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=9;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1175" y="663" width="400" height="16" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow: Elasticsearch → Kibana -->
+        <mxCell id="arr_es_kib" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#555555;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="es_box" target="kibana_box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Kibana -->
+        <mxCell id="kibana_box" value="Kibana 9.1.4" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8488A;strokeColor=#B52A67;fontColor=#ffffff;fontSize=13;fontStyle=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1195" y="710" width="360" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="kibana_sub" value="Discover · Data View: filebeat-9.1.4 · Dev Tools verified" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=9;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1175" y="758" width="400" height="16" as="geometry" />
+        </mxCell>
+
+        <!-- ECK manages ES + Kibana -->
+        <mxCell id="eck_box" value="ECK Operator" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#343741;strokeColor=#222222;fontColor=#ffffff;fontSize=10;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1455" y="650" width="130" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="arr_eck_es" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.3;entryDx=0;entryDy=0;strokeColor=#343741;strokeWidth=1.5;dashed=1;fontSize=9;endArrow=block;endFill=1;" edge="1" parent="1" source="eck_box" target="es_box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arr_eck_kib" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.3;entryDx=0;entryDy=0;strokeColor=#343741;strokeWidth=1.5;dashed=1;fontSize=9;endArrow=block;endFill=1;" edge="1" parent="1" source="eck_box" target="kibana_box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ================================================================ -->
+        <!-- LEGEND                                                             -->
+        <!-- ================================================================ -->
+        <mxCell id="legend_box" value="Legend" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;fontStyle=1;arcSize=6;verticalAlign=top;spacingTop=4;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="830" width="510" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="leg1" value="Terraform-managed infrastructure" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#7B42BC;strokeColor=#5C2D91;fontColor=#ffffff;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1130" y="860" width="220" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="leg2" value="Deployed to cluster (not Terraform)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1365" y="860" width="250" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="leg3" value="CI/CD flow" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2088FF;strokeColor=#1366CC;fontColor=#ffffff;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1130" y="892" width="110" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="leg4" value="GitOps sync (Argo CD watches Git)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EF4C3A;strokeColor=#B82A1E;fontColor=#ffffff;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1255" y="892" width="220" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="leg5" value="Metrics scrape" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E65100;strokeColor=#BF360C;fontColor=#ffffff;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1490" y="892" width="125" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="leg6" value="Log shipping" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#006064;strokeColor=#00363A;fontColor=#ffffff;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1130" y="922" width="110" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="leg7" value="EKS cluster: retail-store-svqs · Kubernetes v1.33 · us-west-2" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=9;fontColor=#555555;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1255" y="922" width="355" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- ================================================================ -->
+        <!-- TITLE                                                              -->
+        <!-- ================================================================ -->
+        <mxCell id="title" value="Retail Store Sample App — DevOps Architecture" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=18;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="10" y="1080" width="1630" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="GitHub Actions CI/CD  ·  Amazon EKS Auto Mode  ·  ArgoCD GitOps  ·  Prometheus + Grafana  ·  Filebeat + Elasticsearch + Kibana  ·  Terraform IaC" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=11;fontColor=#666666;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="10" y="1108" width="1630" height="20" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
