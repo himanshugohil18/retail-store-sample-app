@@ -32,6 +32,7 @@ This is a sample application designed to illustrate various concepts related to 
 - [Infrastructure Components](#infrastructure-components)
 - [CI/CD Pipeline](#cicd-pipeline)
 - [Monitoring and Observability](#monitoring-and-observability)
+- [Custom Implementation](#custom-implementation)
 - [Cleanup](https://github.com/LondheShubham153/retail-store-sample-app/blob/main/README.md#step-12-cleanup)
 - [Troubleshooting](#troubleshooting)
 
@@ -351,6 +352,232 @@ terraform destroy --auto-approve
 
 
 
+
+## Custom Implementation
+
+> **Project-specific additions**
+>
+> The original Retail Store Sample App functionality and documentation have been retained. The following section documents the DevOps, cloud, security, CI/CD, GitOps, and observability work added as part of this implementation.
+
+### 1. AWS Infrastructure with Terraform
+
+The project infrastructure was extended and managed through Terraform so that the environment can be reproduced as code.
+
+Custom infrastructure work includes:
+
+- Amazon EKS cluster and supporting AWS networking
+- VPC, public/private subnet configuration, security groups, and IAM resources
+- Amazon ECR repositories for the application services
+- ECR lifecycle policies for managing image retention
+- Kubernetes add-ons deployed through Terraform/Helm
+- Terraform outputs for important cluster and CI/CD integration values
+
+### 2. GitHub Actions CI/CD Pipeline
+
+A custom GitHub Actions workflow was implemented for automated application delivery.
+
+**Pipeline flow:**
+
+```text
+Developer Push
+      │
+      ▼
+GitHub Actions
+      │
+      ▼
+Detect Changed Services
+      │
+      ├── UI
+      ├── Catalog
+      ├── Cart
+      ├── Orders
+      └── Checkout
+      │
+      ▼
+Build Only Changed Services
+      │
+      ▼
+Docker Build
+      │
+      ▼
+Tag Image with Git SHA
+      │
+      ▼
+Push Image to Amazon ECR
+      │
+      ▼
+Update Helm values.yaml
+      │
+      ▼
+Commit Changes Back to Git
+      │
+      ▼
+Argo CD Detects Git Change
+      │
+      ▼
+EKS Rolling Deployment
+```
+
+The workflow also includes:
+
+- Path-based change detection so unchanged services are not rebuilt.
+- Parallel matrix builds for changed services.
+- Immutable Git SHA image tags.
+- Manual `workflow_dispatch` support for forced service rebuilds.
+- Concurrency control to avoid competing image/version updates.
+- Automatic Helm `values.yaml` updates after a successful image push.
+- `[skip ci]` handling on the generated values commit to prevent an infinite CI loop.
+
+### 3. GitHub OIDC Authentication
+
+GitHub Actions authenticates to AWS using **OpenID Connect (OIDC)** instead of storing long-lived AWS access keys.
+
+The implementation includes:
+
+- GitHub Actions OIDC identity provider in AWS IAM.
+- Dedicated IAM role for the CI/CD workflow.
+- Repository and branch-specific trust policy.
+- Least-privilege ECR permissions for image publishing.
+- Short-lived AWS credentials issued through `AssumeRoleWithWebIdentity`.
+- GitHub's built-in `GITHUB_TOKEN` for committing Helm value changes.
+
+This removes the need to store `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` as long-lived GitHub credentials.
+
+### 4. Amazon ECR Image Management
+
+Private ECR repositories were configured for the application services.
+
+The CI/CD workflow:
+
+1. Authenticates to AWS through OIDC.
+2. Logs in to Amazon ECR.
+3. Builds the changed service image.
+4. Tags the image using the Git commit SHA.
+5. Pushes the image to the corresponding private ECR repository.
+6. Updates the Kubernetes Helm values with the new image reference.
+
+ECR lifecycle policies are also used to prevent unlimited accumulation of old CI-generated images.
+
+### 5. Argo CD GitOps Deployment
+
+Argo CD was configured as the GitOps deployment controller for the Kubernetes workloads.
+
+Custom GitOps work includes:
+
+- Argo CD applications configured against this Git repository.
+- Repository references updated to the project's GitHub repository.
+- Helm-based application deployment.
+- Automatic synchronization from Git to the EKS cluster.
+- Application health and sync-status monitoring through the Argo CD UI.
+- Kubernetes rolling updates triggered by Git changes.
+
+The resulting deployment path is:
+
+```text
+GitHub Repository
+      │
+      ▼
+GitHub Actions
+      │
+      ▼
+Private Amazon ECR
+      │
+      ▼
+Helm values.yaml updated in Git
+      │
+      ▼
+Argo CD
+      │
+      ▼
+Amazon EKS
+      │
+      ▼
+Retail Store Services
+```
+
+### 6. Kubernetes Ingress and Application Exposure
+
+The application was exposed through Kubernetes Ingress and the NGINX Ingress Controller.
+
+The deployment includes:
+
+- NGINX Ingress Controller
+- Kubernetes Ingress resources for the retail services
+- Load balancer exposure for external access
+- Cert Manager integration for certificate management
+
+### 7. Monitoring and Observability
+
+A dedicated observability layer was added to monitor the Kubernetes environment and application workloads.
+
+The monitoring stack includes:
+
+- **Prometheus** for Kubernetes and application metrics.
+- **Grafana** for dashboards and visualization.
+- **Elastic Stack** for centralized log collection and log exploration.
+- **Filebeat** for collecting container/Kubernetes logs and forwarding them to Elasticsearch.
+- **Kibana / Elastic Discover** for searching and analyzing application and Kubernetes logs.
+
+This provides both major observability signals:
+
+```text
+Metrics
+   │
+   ▼
+Prometheus
+   │
+   ▼
+Grafana
+   │
+   └── Dashboards / Alerts
+
+Logs
+   │
+   ▼
+Filebeat
+   │
+   ▼
+Elasticsearch
+   │
+   ▼
+Kibana / Elastic Discover
+   │
+   └── Log Search / Analysis
+```
+
+### 8. Operational Verification
+
+The deployment was also verified using Kubernetes and Argo CD operational checks, including:
+
+```bash
+kubectl get nodes
+kubectl get pods -n argocd
+kubectl get pods -n retail-store
+kubectl get ingress -n retail-store
+kubectl get svc -n ingress-nginx
+```
+
+Argo CD was verified through its web UI, where the deployed retail-store applications were shown as healthy and synchronized.
+
+### 9. Engineering Focus
+
+The custom implementation focuses on the complete DevOps delivery lifecycle:
+
+- Infrastructure as Code with Terraform
+- Kubernetes on Amazon EKS
+- Containerization with Docker
+- Private image registry with Amazon ECR
+- Secure GitHub-to-AWS authentication with OIDC
+- CI/CD with GitHub Actions
+- GitOps with Argo CD
+- Helm-based Kubernetes deployments
+- Ingress and traffic exposure
+- Metrics with Prometheus
+- Visualization with Grafana
+- Centralized logging with Elastic Stack
+- Automated deployment and operational verification
+
+
 ## Troubleshooting
 
 ### Common Issues
@@ -398,4 +625,3 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](./LICE
 
 </div>
 
-# CI/CD OIDC test
